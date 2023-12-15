@@ -1,46 +1,29 @@
-import _throttle from 'lodash.throttle';
-const formEl = document.querySelector('.feedback-form');
-const LOCAL_STORAGE_KEY = 'feedback-form-state';
+import throttle from 'lodash.throttle';
 
-let data = {};
+const getFormValue = JSON.parse(localStorage.getItem('feedback-form-state'));
 
-loadForm();
+const form = document.querySelector('.feedback-form');
+let formValue = {};
 
-formEl.addEventListener('input', _throttle(onSaveFormInput, 500));
-
-formEl.addEventListener('submit', onFormSubmit);
-
-function onSaveFormInput(event) {
-  data = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
-
-  data[event.target.name] = event.target.value;
-
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+if (getFormValue) {
+  form.elements.email.value = getFormValue.email || '';
+  form.elements.message.value = getFormValue.message || '';
+  formValue = getFormValue;
 }
 
-function onFormSubmit(event) {
-  event.preventDefault();
-  if (!event.target.email.value || !event.target.message.value) {
-    alert('Enter all data');
-    return;
-  }
+const hangleChange = evt => {
+  const { name, value } = evt.target;
+  formValue[name] = value;
+  localStorage.setItem('feedback-form-state', JSON.stringify(formValue));
+};
 
-  event.target.reset();
-  console.log(data);
-  localStorage.removeItem(LOCAL_STORAGE_KEY);
+function onFormSubmit(evt) {
+  evt.preventDefault();
+  console.log(formValue);
+  localStorage.removeItem('feedback-form-state');
+  evt.currentTarget.reset();
+  formValue = {};
 }
 
-function loadForm() {
-  try {
-    let formLoad = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
-    if (!formLoad) {
-      return;
-    }
-
-    data = formLoad;
-    formEl.email.value = data.email || '';
-    formEl.message.value = data.message || '';
-  } catch (error) {
-    console.error('Error.message ', error.message);
-  }
-}
+form.addEventListener('input', throttle(hangleChange, 500));
+form.addEventListener('submit', onFormSubmit);
