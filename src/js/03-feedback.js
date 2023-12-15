@@ -1,37 +1,46 @@
-import throttle from 'just-throttle';
+import _throttle from 'lodash.throttle';
+const formEl = document.querySelector('.feedback-form');
+const LOCAL_STORAGE_KEY = 'feedback-form-state';
 
-const form = document.querySelector('.feedback-form');
+let data = {};
 
-form.addEventListener('submit', onFormSubmit);
-form.addEventListener('input', throttle(onFormInput, 500));
+loadForm();
 
-function onFormSubmit(evt) {
-  evt.preventDefault();
-  const submitObject = {
-    email: evt.target.elements.email.value,
-    message: evt.target.elements.message.value,
-  };
+formEl.addEventListener('input', _throttle(onSaveFormInput, 500));
 
-  console.log(submitObject);
+formEl.addEventListener('submit', onFormSubmit);
 
-  localStorage.removeItem('email');
-  localStorage.removeItem('message');
+function onSaveFormInput(event) {
+  data = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
 
-  evt.target.reset();
+  data[event.target.name] = event.target.value;
+
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
 }
 
-function onFormInput(event) {
-  const email = event.target.name;
-  const value = event.target.value;
+function onFormSubmit(event) {
+  event.preventDefault();
+  if (!event.target.email.value || !event.target.message.value) {
+    alert('Enter all data');
+    return;
+  }
 
-  localStorage.setItem(email, value);
+  event.target.reset();
+  console.log(data);
+  localStorage.removeItem(LOCAL_STORAGE_KEY);
 }
 
-function onPageReload() {
-  const email = localStorage.getItem('email');
-  const message = localStorage.getItem('message');
+function loadForm() {
+  try {
+    let formLoad = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+    if (!formLoad) {
+      return;
+    }
 
-  form.elements.email.value = email;
-  form.elements.message.value = message;
+    data = formLoad;
+    formEl.email.value = data.email || '';
+    formEl.message.value = data.message || '';
+  } catch (error) {
+    console.error('Error.message ', error.message);
+  }
 }
-onPageReload();
